@@ -77,16 +77,18 @@ public class EmailDelegatingHandler : DelegatingHandler
     private async Task<string> FetchTokenAsync(CancellationToken ct)
     {
         var tokenRequest = new { username = _options.Username, password = _options.Password };
+        var tokenUrl = new Uri(new Uri(_options.BaseUrl), _options.TokenEndpoint);
+
         var response = await base.SendAsync(
-            new HttpRequestMessage(HttpMethod.Post, _options.TokenEndpoint)
+            new HttpRequestMessage(HttpMethod.Post, tokenUrl)
             {
                 Content = JsonContent.Create(tokenRequest)
             }, ct);
 
         response.EnsureSuccessStatusCode();
         var result = await response.Content.ReadFromJsonAsync<TokenResponse>(ct);
-        return result?.AccessToken ?? throw new InvalidOperationException("Failed to get email API token");
+        return result?.Token ?? throw new InvalidOperationException("Failed to get email API token");
     }
 
-    private record TokenResponse(string AccessToken, string TokenType, int ExpiresIn);
+    private record TokenResponse(int Code, string? Message, string Token);
 }

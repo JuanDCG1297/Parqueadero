@@ -1,5 +1,6 @@
-using System.Net.Http.Json;
+using Microsoft.Extensions.Options;
 using Polly;
+using System.Net.Http.Json;
 
 namespace Infrastructure.Email;
 
@@ -12,11 +13,13 @@ public class EmailClient
 {
     private readonly HttpClient _httpClient;
     private readonly ResiliencePipeline<HttpResponseMessage> _pipeline;
+    private readonly EmailOptions _options;
 
-    public EmailClient(HttpClient httpClient)
+    public EmailClient(HttpClient httpClient, IOptions<EmailOptions> options)
     {
         _httpClient = httpClient;
         _pipeline = EmailPolicies.RetryPipeline;
+        _options = options.Value;
     }
 
     public async Task<HttpResponseMessage> SendEmailAsync(EmailSendPayload payload, CancellationToken ct)
@@ -24,8 +27,9 @@ public class EmailClient
             static async (state, ct) =>
             {
                 var (client, p) = state;
-                return await client._httpClient.PostAsJsonAsync("/api/email/sendEmail", p, ct);
+                return await client._httpClient.PostAsJsonAsync(client._options.SendEndpoint, p, ct);
             },
             (this, payload),
             ct);
+
 }
