@@ -18,6 +18,12 @@ public class EmailService : IEmailService
         _options = options.Value;
     }
 
+    /// <summary>
+    /// Metodo que genera la informacion que se envia por correo al cliente cuando el vehiculo sale
+    /// </summary>
+    /// <param name="entry"></param>
+    /// <param name="ct"></param>
+    /// <returns></returns>
     public async Task SendExitNotificationAsync(VehicleEntry entry, CancellationToken ct = default)
     {
         try
@@ -57,6 +63,7 @@ public class EmailService : IEmailService
                 }
             };
 
+            //Llamado a la API de envio de correo
             var response = await _emailClient.SendEmailAsync(payload, ct);
             if (response.IsSuccessStatusCode)
             {

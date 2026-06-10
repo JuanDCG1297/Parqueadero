@@ -35,7 +35,7 @@ public class ParkingService : IParkingService
 
         var entryTime = request.EntryTime ?? DateTime.UtcNow;
 
-        // Valida placas duplicadas
+        // Valida placas duplicadas sin fecha de salida
         var exists = await _repo.ExistsActivePlateAsync(request.Plate.ToUpperInvariant(), ct);
         if (exists)
             throw new ConflictException($"Vehiculo con placa {request.Plate} ya está estacionado.");
@@ -48,13 +48,16 @@ public class ParkingService : IParkingService
 
     public async Task<ExitResponse> RegisterExitAsync(Guid id, CancellationToken ct = default)
     {
+        // Valida que el vehiculo exista por id
         var entry = await _repo.GetByIdAsync(id, ct);
         if (entry is null)
             throw new NotFoundException($"Vehiculo con ID {id} no encontrado.");
 
+        //Valida que no haya sido registrado su salida previamente y calcula el valor a pagar con un redondeo en minutos 
         var result = entry.Exit(DateTime.UtcNow);
         await _repo.UpdateAsync(entry, ct);
 
+        //Llamado Api de envio de correo de notificacion al cliente
         await _emailService.SendExitNotificationAsync(entry, ct);
 
         return new ExitResponse(
@@ -64,11 +67,12 @@ public class ParkingService : IParkingService
         );
     }
 
-    public async Task<VehicleResponse> GetByIdAsync(Guid id, CancellationToken ct = default)
+    public async Task<VehicleResponse> GetByPlateAsync(string plate, CancellationToken ct = default)
     {
-        var entry = await _repo.GetByIdAsync(id, ct);
+        // Valida que el vehiculo exista por placa
+        var entry = await _repo.GetByPlateAsync(plate, ct);
         if (entry is null)
-            throw new NotFoundException($"Vehiculo con ID {id} no encontrado.");
+            throw new NotFoundException($"Vehiculo con placa {plate} no encontrado.");
 
         return new VehicleResponse(
             entry.Id, entry.Plate, entry.VehicleType,

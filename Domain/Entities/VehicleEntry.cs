@@ -27,7 +27,7 @@ public class VehicleEntry
     public ExitResult Exit(DateTime exitTime)
     {
         if (ExitTime.HasValue)
-            throw new ConflictException("Vehicle has already exited.");
+            throw new ConflictException("Vehiculo ya no se encuentra en el parqueadero.");
 
         ExitTime = exitTime;
         TotalMinutes = (int)Math.Ceiling((exitTime - EntryTime).TotalMinutes);

@@ -4,11 +4,6 @@ using System.Net.Http.Json;
 
 namespace Infrastructure.Email;
 
-/// <summary>
-/// Typed HttpClient for email API.
-/// Authentication header is injected by EmailDelegatingHandler.
-/// Retry pipeline wraps the HTTP call with Polly exponential backoff.
-/// </summary>
 public class EmailClient
 {
     private readonly HttpClient _httpClient;
@@ -22,6 +17,12 @@ public class EmailClient
         _options = options.Value;
     }
 
+    /// <summary>
+    /// Metodo que hace el llamado HTTP POST a la API de envio de correo con la informacion del correo a enviar. El pipeline de resiliencia maneja los reintentos mediante Polly.
+    /// </summary>
+    /// <param name="payload"></param>
+    /// <param name="ct"></param>
+    /// <returns></returns>
     public async Task<HttpResponseMessage> SendEmailAsync(EmailSendPayload payload, CancellationToken ct)
         => await _pipeline.ExecuteAsync(
             static async (state, ct) =>
