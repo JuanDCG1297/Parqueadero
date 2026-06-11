@@ -74,6 +74,17 @@ public class ParkingService : IParkingService
         );
     }
 
+    public async Task<List<VehicleResponse>> GetActiveAsync(CancellationToken ct = default)
+    {
+        var activeEntries = await _repo.GetActiveAsync(ct);
+
+        return activeEntries.Select(e => new VehicleResponse(
+            e.Id, e.Plate, e.VehicleType.Name,
+            e.EntryTime, e.ExitTime,
+            e.TotalMinutes, e.Fee, e.EmailSent
+        )).ToList();
+    }
+
     public async Task<VehicleResponse> GetByPlateAsync(string plate, CancellationToken ct = default)
     {
         // Valida que el vehiculo exista por placa

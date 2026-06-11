@@ -102,6 +102,7 @@ volumes:
 ```powershell
 # Todos los registros
 docker exec -it -e MYSQL_PWD=root parking-mysql mysql -u root parqueadero -e "SELECT * FROM VehicleEntries"
+docker exec -it -e MYSQL_PWD=root parking-mysql mysql -u root parqueadero -e "SELECT * FROM VehicleTypes"
 
 # Solo vehículos estacionados (sin salir)
 docker exec -it parking-mysql mysql -uroot -proot -e "
@@ -224,17 +225,6 @@ Content-Type: application/json
   "message": "Salida registrada exitosamente"
 }
 ```
-
-### Tipos de vehículo y tarifas
-
-| Tipo        | Tarifa por hora |
-| ----------- | --------------- |
-| `Carro`     | $2.400 COP      |
-| `Moto`      | $1.200 COP      |
-| `Bicicleta` | $600 COP        |
-
-El cálculo es **por fracción de hora** (si estacionó 1h10m, paga 2 horas).
-
 ### Códigos de error
 
 | Código | Significado                                                              |

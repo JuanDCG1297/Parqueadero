@@ -23,6 +23,12 @@ public class VehicleRepository : IVehicleRepository
     public async Task<bool> ExistsActivePlateAsync(string plate, CancellationToken ct = default)
         => await _db.VehicleEntries.AnyAsync(e => e.Plate == plate && e.ExitTime == null, ct);
 
+    public async Task<List<VehicleEntry>> GetActiveAsync(CancellationToken ct = default)
+        => await _db.VehicleEntries
+            .Include(e => e.VehicleType)
+            .Where(e => e.ExitTime == null)
+            .ToListAsync(ct);
+
     public async Task AddAsync(VehicleEntry entry, CancellationToken ct = default)
     {
         await _db.VehicleEntries.AddAsync(entry, ct);

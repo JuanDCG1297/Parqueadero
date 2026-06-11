@@ -47,6 +47,19 @@ public class VehiclesController : ControllerBase
 
 
     /// <summary>
+    /// Metodo que retorna todos los vehiculos que se encuentran actualmente en el parqueadero (sin fecha de salida).
+    /// </summary>
+    /// <param name="ct"></param>
+    /// <returns></returns>
+    [HttpGet("active")]
+    [ProducesResponseType(typeof(List<VehicleResponse>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetActive(CancellationToken ct)
+    {
+        var response = await _parkingService.GetActiveAsync(ct);
+        return Ok(response);
+    }
+
+    /// <summary>
     /// Metodo que consulta la informacion de un vehiculo registrado en el parqueadero por su placa. Valida que el vehiculo exista y retorna su informacion incluyendo si se encuentra actualmente en el parqueadero o ya ha salido.
     /// </summary>
     /// <param name="plate"></param>

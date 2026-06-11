@@ -10,7 +10,6 @@ using Web.Api.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Persistence — SQLite (dev) / MySQL (production)
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<AppDbContext>(options =>
         options.UseMySQL(connectionString, b => b.MigrationsAssembly("Web.Api")));

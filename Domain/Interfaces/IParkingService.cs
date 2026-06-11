@@ -7,4 +7,5 @@ public interface IParkingService
     Task<EntryResponse> RegisterEntryAsync(EntryRequest request, CancellationToken ct = default);
     Task<ExitResponse> RegisterExitAsync(Guid id, CancellationToken ct = default);
     Task<VehicleResponse> GetByPlateAsync(string plate, CancellationToken ct = default);
+    Task<List<VehicleResponse>> GetActiveAsync(CancellationToken ct = default);
 }
