@@ -31,8 +31,17 @@ public class AppDbContext : DbContext
                   .HasColumnName("VehicleType")
                   .IsRequired();
             entity.Property(e => e.Plate).HasMaxLength(10).IsRequired();
-            entity.Property(e => e.EntryTime).IsRequired();
-            entity.Property(e => e.ExitTime);
+            entity.Property(e => e.EntryTime)
+                  .IsRequired()
+                  .HasConversion(
+                      v => v,
+                      v => DateTime.SpecifyKind(v, DateTimeKind.Utc)
+                  );
+            entity.Property(e => e.ExitTime)
+                  .HasConversion(
+                      v => v,
+                      v => v.HasValue ? DateTime.SpecifyKind(v.Value, DateTimeKind.Utc) : v
+                  );
             entity.Property(e => e.TotalMinutes);
             entity.Property(e => e.Fee).HasColumnType("decimal(18,2)");
             entity.Property(e => e.EmailSent).HasDefaultValue(false);

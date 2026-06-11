@@ -33,6 +33,17 @@ builder.Services.AddHttpClient<EmailClient>(client =>
 })
 .AddHttpMessageHandler<EmailDelegatingHandler>();
 
+// CORS — Permitir peticiones desde el frontend Angular
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins("http://localhost:4200", "https://localhost:4200")
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
 // Validation
 builder.Services.AddValidatorsFromAssemblyContaining<EntryRequestValidator>();
 
@@ -61,6 +72,8 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.UseMiddleware<ExceptionMiddleware>();
+
+app.UseCors("AllowFrontend");
 
 if (app.Environment.IsDevelopment())
 {
