@@ -63,20 +63,28 @@ public class ParkingService : IParkingService
         //Valida que no haya sido registrado su salida previamente y calcula el valor a pagar con un redondeo en minutos 
         var result = entry.Exit(DateTime.UtcNow);
 
+        // Guarda la salida PRIMERO — esto SIEMPRE debe persistir,
+        // incluso si el email falla o el cliente se desconecta.
+        await _repo.UpdateAsync(entry, ct);
+
         // Intento de envío de email — NO BLOQUEANTE.
-        // Si la API de email está caída, la salida se registra igual
-        // y EmailSent queda como false (se guarda en el UpdateAsync siguiente).
+        // Usamos CancellationToken.None para que un timeout del cliente
+        // no interrumpa el envío ni afecte el registro de salida.
         try
         {
-            await _emailService.SendExitNotificationAsync(entry, ct);
+            await _emailService.SendExitNotificationAsync(entry, CancellationToken.None);
+
+            // Si el email se envió correctamente, MarkEmailSent() cambió EmailSent
+            // en memoria. Persistimos ese cambio en DB.
+            if (entry.EmailSent)
+            {
+                await _repo.UpdateAsync(entry, CancellationToken.None);
+            }
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Error al enviar notificación email para {Plate}. La salida se registró correctamente.", entry.Plate);
         }
-
-        // Guarda todo (ExitTime, TotalMinutes, Fee y EmailSent si MarkEmailSent se ejecutó)
-        await _repo.UpdateAsync(entry, ct);
 
         return new ExitResponse(
             entry.Id, entry.Plate, entry.VehicleType.Name,

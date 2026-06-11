@@ -32,33 +32,41 @@ public class EmailDelegatingHandler : DelegatingHandler
     /// <returns></returns>
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
     {
-        var token = await GetTokenAsync(ct);
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        var response = await base.SendAsync(request, ct);
-
-        if (response.StatusCode == HttpStatusCode.Unauthorized)
+        try
         {
-            _logger.LogWarning("Email API token expired, refreshing...");
-            await _semaphore.WaitAsync(ct);
-            try
-            {
-                // Another request might have refreshed it while we waited
-                if (_cache.TryGetValue("email_api_token", out string? cachedToken) && cachedToken is not null)
-                {
-                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", cachedToken);
-                }
-                else
-                {
-                    token = await FetchTokenAsync(ct);
-                    _cache.Set("email_api_token", token, TimeSpan.FromMinutes(55));
-                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-                }
-                return await base.SendAsync(request, ct);
-            }
-            finally { _semaphore.Release(); }
-        }
+            var token = await GetTokenAsync(ct);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            var response = await base.SendAsync(request, ct);
 
-        return response;
+            if (response.StatusCode == HttpStatusCode.Unauthorized)
+            {
+                _logger.LogWarning("Email API token expired, refreshing...");
+                await _semaphore.WaitAsync(ct);
+                try
+                {
+                    // Another request might have refreshed it while we waited
+                    if (_cache.TryGetValue("email_api_token", out string? cachedToken) && cachedToken is not null)
+                    {
+                        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", cachedToken);
+                    }
+                    else
+                    {
+                        token = await FetchTokenAsync(ct);
+                        _cache.Set("email_api_token", token, TimeSpan.FromMinutes(55));
+                        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                    }
+                    return await base.SendAsync(request, ct);
+                }
+                finally { _semaphore.Release(); }
+            }
+
+            return response;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Email API no disponible ({Url}). El email no se enviará.", _options.BaseUrl);
+            return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+        }
     }
 
     /// <summary>
