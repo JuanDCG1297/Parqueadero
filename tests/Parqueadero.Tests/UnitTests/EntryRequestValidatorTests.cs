@@ -33,7 +33,7 @@ public class EntryRequestValidatorTests
 
         // Assert
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == "Plate" && e.ErrorMessage.Contains("required"));
+        result.Errors.Should().Contain(e => e.PropertyName == "Plate" && e.ErrorMessage.Contains("requerida"));
     }
 
     [Fact]
@@ -61,7 +61,7 @@ public class EntryRequestValidatorTests
 
         // Assert
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == "Plate" && e.ErrorMessage.Contains("alphanumeric"));
+        result.Errors.Should().Contain(e => e.PropertyName == "Plate" && e.ErrorMessage.Contains("alfanumérica"));
     }
 
     [Fact]
@@ -75,7 +75,7 @@ public class EntryRequestValidatorTests
 
         // Assert
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == "Plate" && e.ErrorMessage.Contains("uppercase"));
+        result.Errors.Should().Contain(e => e.PropertyName == "Plate" && e.ErrorMessage.Contains("mayúsculas"));
     }
 
     [Fact]
@@ -116,7 +116,7 @@ public class EntryRequestValidatorTests
 
         // Assert
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == "EntryTime" && e.ErrorMessage.Contains("future"));
+        result.Errors.Should().Contain(e => e.PropertyName == "EntryTime" && e.ErrorMessage.Contains("futuro"));
     }
 
     [Fact]

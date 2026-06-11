@@ -13,7 +13,19 @@ public class VehicleRepositoryTests
         var options = new DbContextOptionsBuilder<AppDbContext>()
             .UseInMemoryDatabase(databaseName: dbName)
             .Options;
-        return new AppDbContext(options);
+        var db = new AppDbContext(options);
+
+        // Seed VehicleTypes (in-memory no ejecuta HasData automáticamente)
+        if (!db.VehicleTypes.Any())
+        {
+            db.VehicleTypes.AddRange(
+                new VehicleType { Id = 1, Name = "Carro" },
+                new VehicleType { Id = 2, Name = "Moto" }
+            );
+            db.SaveChanges();
+        }
+
+        return db;
     }
 
     [Fact]
@@ -22,7 +34,7 @@ public class VehicleRepositoryTests
         // Arrange
         var db = CreateDbContext("Test_Add_Persist");
         var repo = new VehicleRepository(db);
-        var entry = new VehicleEntry("Carro", "ABC123", DateTime.UtcNow);
+        var entry = new VehicleEntry(1, "ABC123", DateTime.UtcNow); // Carro
 
         // Act
         await repo.AddAsync(entry);
@@ -31,7 +43,7 @@ public class VehicleRepositoryTests
         var saved = await db.VehicleEntries.FindAsync(entry.Id);
         saved.Should().NotBeNull();
         saved!.Plate.Should().Be("ABC123");
-        saved.VehicleType.Should().Be("Carro");
+        saved.VehicleTypeId.Should().Be(1);
     }
 
     [Fact]
@@ -54,7 +66,7 @@ public class VehicleRepositoryTests
         // Arrange
         var db = CreateDbContext("Test_GetById_Found");
         var repo = new VehicleRepository(db);
-        var entry = new VehicleEntry("Moto", "XYZ789", DateTime.UtcNow);
+        var entry = new VehicleEntry(2, "XYZ789", DateTime.UtcNow); // Moto
         await repo.AddAsync(entry);
 
         // Act
@@ -72,7 +84,7 @@ public class VehicleRepositoryTests
         // Arrange
         var db = CreateDbContext("Test_ExistsActive_True");
         var repo = new VehicleRepository(db);
-        var entry = new VehicleEntry("Carro", "ABC123", DateTime.UtcNow);
+        var entry = new VehicleEntry(1, "ABC123", DateTime.UtcNow); // Carro
         await repo.AddAsync(entry);
 
         // Act
@@ -88,7 +100,7 @@ public class VehicleRepositoryTests
         // Arrange
         var db = CreateDbContext("Test_ExistsActive_Exited");
         var repo = new VehicleRepository(db);
-        var entry = new VehicleEntry("Carro", "ABC123", DateTime.UtcNow.AddHours(-2));
+        var entry = new VehicleEntry(1, "ABC123", DateTime.UtcNow.AddHours(-2)); // Carro
         await repo.AddAsync(entry);
         entry.Exit(DateTime.UtcNow);
         await repo.UpdateAsync(entry);
@@ -120,7 +132,7 @@ public class VehicleRepositoryTests
         // Arrange
         var db = CreateDbContext("Test_Update_Persist");
         var repo = new VehicleRepository(db);
-        var entry = new VehicleEntry("Carro", "ABC123", DateTime.UtcNow.AddHours(-3));
+        var entry = new VehicleEntry(1, "ABC123", DateTime.UtcNow.AddHours(-3)); // Carro
         await repo.AddAsync(entry);
 
         // Act

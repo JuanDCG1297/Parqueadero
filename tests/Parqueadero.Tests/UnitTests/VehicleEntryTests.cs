@@ -11,16 +11,16 @@ public class VehicleEntryTests
     {
         // Arrange
         var plate = "ABC123";
-        var vehicleType = "Carro";
+        var vehicleTypeId = 1; // Carro
         var entryTime = new DateTime(2026, 6, 9, 10, 0, 0, DateTimeKind.Utc);
 
         // Act
-        var entry = new VehicleEntry(vehicleType, plate, entryTime);
+        var entry = new VehicleEntry(vehicleTypeId, plate, entryTime);
 
         // Assert
         entry.Id.Should().NotBeEmpty();
         entry.Plate.Should().Be("ABC123");
-        entry.VehicleType.Should().Be("Carro");
+        entry.VehicleTypeId.Should().Be(1);
         entry.EntryTime.Should().Be(entryTime);
         entry.ExitTime.Should().BeNull();
         entry.TotalMinutes.Should().BeNull();
@@ -33,11 +33,11 @@ public class VehicleEntryTests
     {
         // Arrange
         var plate = "abc123";
-        var vehicleType = "Moto";
+        var vehicleTypeId = 2; // Moto
         var entryTime = DateTime.UtcNow;
 
         // Act
-        var entry = new VehicleEntry(vehicleType, plate, entryTime);
+        var entry = new VehicleEntry(vehicleTypeId, plate, entryTime);
 
         // Assert
         entry.Plate.Should().Be("ABC123");
@@ -49,7 +49,7 @@ public class VehicleEntryTests
         // Arrange
         var entryTime = new DateTime(2026, 6, 9, 10, 0, 0, DateTimeKind.Utc);
         var exitTime = new DateTime(2026, 6, 9, 10, 30, 0, DateTimeKind.Utc);
-        var entry = new VehicleEntry("Carro", "ABC123", entryTime);
+        var entry = new VehicleEntry(1, "ABC123", entryTime); // Carro
 
         // Act
         var result = entry.Exit(exitTime);
@@ -68,14 +68,14 @@ public class VehicleEntryTests
         // Arrange
         var entryTime = new DateTime(2026, 6, 9, 10, 0, 0, DateTimeKind.Utc);
         var exitTime = new DateTime(2026, 6, 9, 10, 30, 0, DateTimeKind.Utc);
-        var entry = new VehicleEntry("Carro", "ABC123", entryTime);
+        var entry = new VehicleEntry(1, "ABC123", entryTime); // Carro
         entry.Exit(exitTime);
 
         // Act
         var act = () => entry.Exit(new DateTime(2026, 6, 9, 11, 0, 0, DateTimeKind.Utc));
 
         // Assert
-        act.Should().Throw<ConflictException>().WithMessage("Vehicle has already exited.");
+        act.Should().Throw<ConflictException>().WithMessage("*ya no se encuentra*");
     }
 
     [Fact]
@@ -84,7 +84,7 @@ public class VehicleEntryTests
         // Arrange
         var entryTime = new DateTime(2026, 6, 9, 10, 0, 0, DateTimeKind.Utc);
         var exitTime = new DateTime(2026, 6, 9, 10, 30, 30, DateTimeKind.Utc); // 30.5 min
-        var entry = new VehicleEntry("Moto", "XYZ789", entryTime);
+        var entry = new VehicleEntry(2, "XYZ789", entryTime); // Moto
 
         // Act
         var result = entry.Exit(exitTime);
@@ -100,7 +100,7 @@ public class VehicleEntryTests
     public void MarkEmailSent_ShouldSetEmailSentToTrue()
     {
         // Arrange
-        var entry = new VehicleEntry("Carro", "ABC123", DateTime.UtcNow);
+        var entry = new VehicleEntry(1, "ABC123", DateTime.UtcNow); // Carro
 
         // Act
         entry.MarkEmailSent();

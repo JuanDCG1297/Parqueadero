@@ -4,15 +4,25 @@
 );
 
 BEGIN TRANSACTION;
+
+CREATE TABLE "VehicleTypes" (
+    "Id" INTEGER NOT NULL CONSTRAINT "PK_VehicleTypes" PRIMARY KEY AUTOINCREMENT,
+    "Name" TEXT NOT NULL
+);
+
+INSERT INTO "VehicleTypes" ("Id", "Name") VALUES (1, 'Carro'), (2, 'Moto');
+
 CREATE TABLE "VehicleEntries" (
     "Id" TEXT NOT NULL CONSTRAINT "PK_VehicleEntries" PRIMARY KEY,
-    "VehicleType" TEXT NOT NULL,
+    "VehicleType" INTEGER NOT NULL,
     "Plate" TEXT NOT NULL,
     "EntryTime" TEXT NOT NULL,
     "ExitTime" TEXT NULL,
     "TotalMinutes" INTEGER NULL,
     "Fee" decimal(18,2) NULL,
-    "EmailSent" INTEGER NOT NULL DEFAULT 0
+    "EmailSent" INTEGER NOT NULL DEFAULT 0,
+    CONSTRAINT "FK_VehicleEntries_VehicleTypes"
+        FOREIGN KEY ("VehicleType") REFERENCES "VehicleTypes" ("Id")
 );
 
 CREATE UNIQUE INDEX "IX_VehicleEntry_Plate_Active" ON "VehicleEntries" ("Plate") WHERE [ExitTime] IS NULL;
@@ -21,4 +31,3 @@ INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
 VALUES ('20260610002831_InitialCreate', '10.0.9');
 
 COMMIT;
-

@@ -24,6 +24,12 @@ public class EmailDelegatingHandler : DelegatingHandler
         _logger = logger;
     }
 
+    /// <summary>
+    /// Metodo que intercepta las solicitudes HTTP salientes hacia la API de envio de correo para agregar el token de autenticacion en el encabezado Authorization. Si la respuesta es 401 Unauthorized, intenta refrescar el token y reintentar la solicitud una vez. Utiliza un semaforo para evitar que múltiples solicitudes intenten refrescar el token al mismo tiempo.
+    /// </summary>
+    /// <param name="request"></param>
+    /// <param name="ct"></param>
+    /// <returns></returns>
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
     {
         var token = await GetTokenAsync(ct);
@@ -55,11 +61,17 @@ public class EmailDelegatingHandler : DelegatingHandler
         return response;
     }
 
+    /// <summary>
+    /// Metodo que genera el token, este metodo se llama siempre que se hace un llamado a la API de envio de correo para obtener el token del cache o generar uno nuevo si el token ha expirado. El token se almacena en cache por 55 minutos para evitar llamadas innecesarias a la API de autenticacion y mejorar el rendimiento.
+    /// </summary>
+    /// <param name="ct"></param>
+    /// <returns></returns>
     private async Task<string> GetTokenAsync(CancellationToken ct)
     {
         if (_cache.TryGetValue("email_api_token", out string? token) && token is not null)
             return token;
 
+        //Se utiliza el semaforo para evitar que múltiples solicitudes intenten refrescar el token al mismo tiempo, actualmente esta como maxima 1 solicitud
         await _semaphore.WaitAsync(ct);
         try
         {
@@ -68,12 +80,19 @@ public class EmailDelegatingHandler : DelegatingHandler
                 return cachedToken;
 
             token = await FetchTokenAsync(ct);
+            //Queda 55 minutos en cache el token para mejorar rendimiento y evitar llamados constantes al Api
             _cache.Set("email_api_token", token, TimeSpan.FromMinutes(55));
             return token;
         }
         finally { _semaphore.Release(); }
     }
 
+    /// <summary>
+    /// Metodo que hace el llamado HTTP POST a la API de autenticacion para obtener un nuevo token de acceso utilizando las credenciales configuradas. Si la respuesta es exitosa, se extrae el token del cuerpo de la respuesta y se retorna. Si falla, se lanza una excepción.
+    /// </summary>
+    /// <param name="ct"></param>
+    /// <returns></returns>
+    /// <exception cref="InvalidOperationException"></exception>
     private async Task<string> FetchTokenAsync(CancellationToken ct)
     {
         var tokenRequest = new { username = _options.Username, password = _options.Password };

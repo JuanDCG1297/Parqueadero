@@ -11,10 +11,14 @@ public class VehicleRepository : IVehicleRepository
     public VehicleRepository(AppDbContext db) => _db = db;
 
     public async Task<VehicleEntry?> GetByIdAsync(Guid id, CancellationToken ct = default)
-        => await _db.VehicleEntries.FirstOrDefaultAsync(e => e.Id == id, ct);
+        => await _db.VehicleEntries
+            .Include(e => e.VehicleType)
+            .FirstOrDefaultAsync(e => e.Id == id, ct);
 
     public async Task<VehicleEntry?> GetByPlateAsync(string plate, CancellationToken ct = default)
-        => await _db.VehicleEntries.FirstOrDefaultAsync(e => e.Plate == plate, ct);
+        => await _db.VehicleEntries
+            .Include(e => e.VehicleType)
+            .FirstOrDefaultAsync(e => e.Plate == plate, ct);
 
     public async Task<bool> ExistsActivePlateAsync(string plate, CancellationToken ct = default)
         => await _db.VehicleEntries.AnyAsync(e => e.Plate == plate && e.ExitTime == null, ct);

@@ -5,7 +5,8 @@ namespace Domain.Entities;
 public class VehicleEntry
 {
     public Guid Id { get; private set; }
-    public string VehicleType { get; private set; } = string.Empty;
+    public int VehicleTypeId { get; private set; }
+    public VehicleType VehicleType { get; private set; } = null!;
     public string Plate { get; private set; } = string.Empty;
     public DateTime EntryTime { get; private set; }
     public DateTime? ExitTime { get; private set; }
@@ -15,10 +16,10 @@ public class VehicleEntry
 
     private VehicleEntry() { } // EF Core
 
-    public VehicleEntry(string vehicleType, string plate, DateTime entryTime)
+    public VehicleEntry(int vehicleTypeId, string plate, DateTime entryTime)
     {
         Id = Guid.NewGuid();
-        VehicleType = vehicleType;
+        VehicleTypeId = vehicleTypeId;
         Plate = plate.ToUpperInvariant();
         EntryTime = entryTime;
         EmailSent = false;

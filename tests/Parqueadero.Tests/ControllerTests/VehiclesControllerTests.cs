@@ -33,8 +33,8 @@ public class VehiclesControllerTests
 
         // Assert
         var createdResult = result.Should().BeOfType<CreatedAtActionResult>().Subject;
-        createdResult.ActionName.Should().Be(nameof(VehiclesController.GetById));
-        createdResult.RouteValues!["id"].Should().Be(response.Id);
+        createdResult.ActionName.Should().Be(nameof(VehiclesController.GetByPlate));
+        createdResult.RouteValues!["plate"].Should().Be(response.Plate);
         createdResult.Value.Should().Be(response);
     }
 
@@ -73,18 +73,18 @@ public class VehiclesControllerTests
     }
 
     [Fact]
-    public async Task GetById_ShouldReturn200Ok_WhenVehicleExists()
+    public async Task GetByPlate_ShouldReturn200Ok_WhenVehicleExists()
     {
         // Arrange
-        var id = Guid.NewGuid();
-        var response = new VehicleResponse(id, "ABC123", "Carro",
+        var plate = "ABC123";
+        var response = new VehicleResponse(Guid.NewGuid(), plate, "Carro",
             DateTime.UtcNow, null, null, null, false);
 
-        _serviceMock.Setup(s => s.GetByIdAsync(id, It.IsAny<CancellationToken>()))
+        _serviceMock.Setup(s => s.GetByPlateAsync(plate, It.IsAny<CancellationToken>()))
             .ReturnsAsync(response);
 
         // Act
-        var result = await _sut.GetById(id, CancellationToken.None);
+        var result = await _sut.GetByPlate(plate, CancellationToken.None);
 
         // Assert
         var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
@@ -92,15 +92,15 @@ public class VehiclesControllerTests
     }
 
     [Fact]
-    public async Task GetById_ShouldReturn404_WhenNotFoundExceptionThrown()
+    public async Task GetByPlate_ShouldReturn404_WhenNotFoundExceptionThrown()
     {
         // Arrange
-        var id = Guid.NewGuid();
-        _serviceMock.Setup(s => s.GetByIdAsync(id, It.IsAny<CancellationToken>()))
+        var plate = "NONEXIST";
+        _serviceMock.Setup(s => s.GetByPlateAsync(plate, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new NotFoundException("Not found"));
 
         // Act
-        var act = () => _sut.GetById(id, CancellationToken.None);
+        var act = () => _sut.GetByPlate(plate, CancellationToken.None);
 
         // Assert
         await act.Should().ThrowAsync<NotFoundException>();

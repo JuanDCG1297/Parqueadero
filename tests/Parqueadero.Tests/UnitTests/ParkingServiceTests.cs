@@ -14,6 +14,7 @@ namespace Parqueadero.Tests.UnitTests;
 public class ParkingServiceTests
 {
     private readonly Mock<IVehicleRepository> _repoMock = new();
+    private readonly Mock<IVehicleTypeRepository> _typeRepoMock = new();
     private readonly Mock<IEmailService> _emailMock = new();
     private readonly Mock<IValidator<EntryRequest>> _validatorMock = new();
     private readonly Mock<ILogger<ParkingService>> _loggerMock = new();
@@ -21,8 +22,14 @@ public class ParkingServiceTests
 
     public ParkingServiceTests()
     {
+        _typeRepoMock.Setup(r => r.GetByNameAsync("Carro", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new VehicleType { Id = 1, Name = "Carro" });
+        _typeRepoMock.Setup(r => r.GetByNameAsync("Moto", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new VehicleType { Id = 2, Name = "Moto" });
+
         _sut = new ParkingService(
             _repoMock.Object,
+            _typeRepoMock.Object,
             _emailMock.Object,
             _validatorMock.Object,
             _loggerMock.Object
@@ -84,7 +91,7 @@ public class ParkingServiceTests
 
         // Assert
         await act.Should().ThrowAsync<ConflictException>()
-            .WithMessage("*already parked*");
+            .WithMessage("*ya está estacionado*");
         _repoMock.Verify(r => r.AddAsync(It.IsAny<VehicleEntry>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -95,9 +102,10 @@ public class ParkingServiceTests
     {
         // Arrange
         var entryId = Guid.NewGuid();
-        var entry = new VehicleEntry("Carro", "ABC123", DateTime.UtcNow.AddHours(-2));
-        // Use reflection to set the Id for testing
+        var entry = new VehicleEntry(1, "ABC123", DateTime.UtcNow.AddHours(-2)); // Carro
+        // Use reflection to set the Id and VehicleType navigation for testing
         typeof(VehicleEntry).GetProperty(nameof(VehicleEntry.Id))!.SetValue(entry, entryId);
+        typeof(VehicleEntry).GetProperty(nameof(VehicleEntry.VehicleType))!.SetValue(entry, new VehicleType { Id = 1, Name = "Carro" });
 
         _repoMock.Setup(r => r.GetByIdAsync(entryId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(entry);
@@ -111,6 +119,7 @@ public class ParkingServiceTests
         response.Should().NotBeNull();
         response.Id.Should().Be(entryId);
         response.Plate.Should().Be("ABC123");
+        response.VehicleType.Should().Be("Carro");
         response.TotalMinutes.Should().BeGreaterThan(0);
         response.Fee.Should().BeGreaterThan(0);
         _repoMock.Verify(r => r.UpdateAsync(entry, It.IsAny<CancellationToken>()), Times.Once);
@@ -136,18 +145,19 @@ public class ParkingServiceTests
     // ─── GetByIdAsync ───────────────────────────────────────────
 
     [Fact]
-    public async Task GetByIdAsync_ShouldReturnVehicleResponse_WhenVehicleExists()
+    public async Task GetByPlateAsync_ShouldReturnVehicleResponse_WhenVehicleExists()
     {
         // Arrange
         var entryId = Guid.NewGuid();
-        var entry = new VehicleEntry("Moto", "XYZ789", DateTime.UtcNow.AddHours(-1));
+        var entry = new VehicleEntry(2, "XYZ789", DateTime.UtcNow.AddHours(-1)); // Moto
         typeof(VehicleEntry).GetProperty(nameof(VehicleEntry.Id))!.SetValue(entry, entryId);
+        typeof(VehicleEntry).GetProperty(nameof(VehicleEntry.VehicleType))!.SetValue(entry, new VehicleType { Id = 2, Name = "Moto" });
 
-        _repoMock.Setup(r => r.GetByIdAsync(entryId, It.IsAny<CancellationToken>()))
+        _repoMock.Setup(r => r.GetByPlateAsync("XYZ789", It.IsAny<CancellationToken>()))
             .ReturnsAsync(entry);
 
         // Act
-        var response = await _sut.GetByIdAsync(entryId);
+        var response = await _sut.GetByPlateAsync("XYZ789");
 
         // Assert
         response.Should().NotBeNull();
@@ -160,15 +170,14 @@ public class ParkingServiceTests
     }
 
     [Fact]
-    public async Task GetByIdAsync_ShouldThrowNotFoundException_WhenVehicleNotFound()
+    public async Task GetByPlateAsync_ShouldThrowNotFoundException_WhenVehicleNotFound()
     {
         // Arrange
-        var entryId = Guid.NewGuid();
-        _repoMock.Setup(r => r.GetByIdAsync(entryId, It.IsAny<CancellationToken>()))
+        _repoMock.Setup(r => r.GetByPlateAsync("NONEXIST", It.IsAny<CancellationToken>()))
             .ReturnsAsync((VehicleEntry?)null);
 
         // Act
-        var act = () => _sut.GetByIdAsync(entryId);
+        var act = () => _sut.GetByPlateAsync("NONEXIST");
 
         // Assert
         await act.Should().ThrowAsync<NotFoundException>();

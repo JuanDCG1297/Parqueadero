@@ -6,22 +6,41 @@ namespace Infrastructure.Data;
 public class AppDbContext : DbContext
 {
     public DbSet<VehicleEntry> VehicleEntries => Set<VehicleEntry>();
+    public DbSet<VehicleType> VehicleTypes => Set<VehicleType>();
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<VehicleType>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).HasMaxLength(10).IsRequired();
+
+            entity.HasData(
+                new VehicleType { Id = 1, Name = "Carro" },
+                new VehicleType { Id = 2, Name = "Moto" }
+            );
+        });
+
         modelBuilder.Entity<VehicleEntry>(entity =>
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Id).ValueGeneratedNever();
-            entity.Property(e => e.VehicleType).HasMaxLength(10).IsRequired();
+            entity.Property(e => e.VehicleTypeId)
+                  .HasColumnName("VehicleType")
+                  .IsRequired();
             entity.Property(e => e.Plate).HasMaxLength(10).IsRequired();
             entity.Property(e => e.EntryTime).IsRequired();
             entity.Property(e => e.ExitTime);
             entity.Property(e => e.TotalMinutes);
             entity.Property(e => e.Fee).HasColumnType("decimal(18,2)");
             entity.Property(e => e.EmailSent).HasDefaultValue(false);
+
+            entity.HasOne(e => e.VehicleType)
+                  .WithMany()
+                  .HasForeignKey(e => e.VehicleTypeId)
+                  .HasConstraintName("FK_VehicleEntries_VehicleTypes");
 
             entity.HasIndex(e => e.Plate)
                   .HasDatabaseName("IX_VehicleEntry_Plate_Active")

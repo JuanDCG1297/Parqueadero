@@ -12,15 +12,13 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Persistence — SQLite (dev) / MySQL (production)
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-if (connectionString?.StartsWith("Server=") == true)
-    builder.Services.AddDbContext<AppDbContext>(options =>
+builder.Services.AddDbContext<AppDbContext>(options =>
         options.UseMySQL(connectionString, b => b.MigrationsAssembly("Web.Api")));
-else
-    builder.Services.AddDbContext<AppDbContext>(options =>
-        options.UseSqlite(connectionString ?? "Data Source=parqueadero.db", b => b.MigrationsAssembly("Web.Api")));
+
 
 // Repositories
 builder.Services.AddScoped<IVehicleRepository, VehicleRepository>();
+builder.Services.AddScoped<IVehicleTypeRepository, VehicleTypeRepository>();
 
 // Application Services
 builder.Services.AddScoped<IParkingService, ParkingService>();

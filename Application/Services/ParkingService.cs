@@ -10,17 +10,20 @@ namespace Application.Services;
 public class ParkingService : IParkingService
 {
     private readonly IVehicleRepository _repo;
+    private readonly IVehicleTypeRepository _typeRepo;
     private readonly IEmailService _emailService;
     private readonly IValidator<EntryRequest> _entryValidator;
     private readonly ILogger<ParkingService> _logger;
 
     public ParkingService(
         IVehicleRepository repo,
+        IVehicleTypeRepository typeRepo,
         IEmailService emailService,
         IValidator<EntryRequest> entryValidator,
         ILogger<ParkingService> logger)
     {
         _repo = repo;
+        _typeRepo = typeRepo;
         _emailService = emailService;
         _entryValidator = entryValidator;
         _logger = logger;
@@ -40,10 +43,14 @@ public class ParkingService : IParkingService
         if (exists)
             throw new ConflictException($"Vehiculo con placa {request.Plate} ya está estacionado.");
 
-        var entry = new VehicleEntry(request.VehicleType, request.Plate, entryTime);
+        // Resuelve VehicleTypeId desde el nombre (el validador ya aseguró que es "Carro" o "Moto")
+        var vehicleType = await _typeRepo.GetByNameAsync(request.VehicleType, ct)
+            ?? throw new NotFoundException($"Tipo de vehículo '{request.VehicleType}' no encontrado.");
+
+        var entry = new VehicleEntry(vehicleType.Id, request.Plate, entryTime);
         await _repo.AddAsync(entry, ct);
 
-        return new EntryResponse(entry.Id, entry.VehicleType, entry.Plate, entry.EntryTime);
+        return new EntryResponse(entry.Id, vehicleType.Name, entry.Plate, entry.EntryTime);
     }
 
     public async Task<ExitResponse> RegisterExitAsync(Guid id, CancellationToken ct = default)
@@ -61,7 +68,7 @@ public class ParkingService : IParkingService
         await _emailService.SendExitNotificationAsync(entry, ct);
 
         return new ExitResponse(
-            entry.Id, entry.Plate, entry.VehicleType,
+            entry.Id, entry.Plate, entry.VehicleType.Name,
             entry.EntryTime, entry.ExitTime!.Value,
             result.TotalMinutes, result.Fee, entry.EmailSent
         );
@@ -75,7 +82,7 @@ public class ParkingService : IParkingService
             throw new NotFoundException($"Vehiculo con placa {plate} no encontrado.");
 
         return new VehicleResponse(
-            entry.Id, entry.Plate, entry.VehicleType,
+            entry.Id, entry.Plate, entry.VehicleType.Name,
             entry.EntryTime, entry.ExitTime,
             entry.TotalMinutes, entry.Fee, entry.EmailSent
         );
